@@ -123,7 +123,8 @@ impl AtomicCounter<SumMode> {
         (self.__get_counter)().fetch_add(value, Ordering::Relaxed);
     }
 
-    fn sub(&self, value: u64) {
+    #[inline(always)]
+    pub fn sub(&self, value: u64) {
         (self.__get_counter)().fetch_sub(value, Ordering::Relaxed);
     }
 }
