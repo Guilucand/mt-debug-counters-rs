@@ -19,7 +19,7 @@ macro_rules! declare_counter_u64_impl {
                         let arc = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
                         let mut list = $crate::counter::__COUNTERS_LIST.lock();
                         let mut cvec = list.entry($name.to_string()).or_insert((Vec::new(), <AtomicCounter<$mode> as $crate::counter::__CounterType>::MODE, $reset));
-                        cvec.0.push(Arc::downgrade(&arc));
+                        cvec.0.push(std::sync::Arc::downgrade(&arc));
                         arc
                     }
                 }
