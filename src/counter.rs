@@ -15,8 +15,8 @@ macro_rules! declare_counter_u64_impl {
         AtomicCounter::<$mode> {
             __get_counter: || {
                 thread_local! {
-                    static COUNTER: Arc<AtomicU64> = {
-                        let arc = Arc::new(AtomicU64::new(0));
+                    static COUNTER: std::sync::Arc<std::sync::atomic::AtomicU64> = {
+                        let arc = Arc::new(std::sync::atomic::AtomicU64::new(0));
                         let mut list = $crate::counter::__COUNTERS_LIST.lock();
                         let mut cvec = list.entry($name.to_string()).or_insert((Vec::new(), <AtomicCounter<$mode> as $crate::counter::__CounterType>::MODE, $reset));
                         cvec.0.push(Arc::downgrade(&arc));
@@ -26,7 +26,7 @@ macro_rules! declare_counter_u64_impl {
                 use std::ops::Deref;
                 COUNTER.with(|c| {
                     unsafe {
-                        &*(c.deref() as *const AtomicU64)
+                        &*(c.deref() as *const std::sync::atomic::AtomicU64)
                     }
                 })
             },
