@@ -12,13 +12,13 @@ use std::thread_local;
 #[macro_export]
 macro_rules! declare_counter_u64_impl {
     ($name:expr, $mode:ty, $reset:expr, $extra:expr) => {
-        AtomicCounter::<$mode> {
+        $crate::counter::AtomicCounter::<$mode> {
             __get_counter: || {
                 thread_local! {
                     static COUNTER: std::sync::Arc<std::sync::atomic::AtomicU64> = {
                         let arc = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
                         let mut list = $crate::counter::__COUNTERS_LIST.lock();
-                        let mut cvec = list.entry($name.to_string()).or_insert((Vec::new(), <AtomicCounter<$mode> as $crate::counter::__CounterType>::MODE, $reset));
+                        let mut cvec = list.entry($name.to_string()).or_insert((Vec::new(), 0, <$crate::counter::AtomicCounter<$mode> as $crate::counter::__CounterType>::MODE, $reset));
                         cvec.0.push(std::sync::Arc::downgrade(&arc));
                         arc
                     }
@@ -64,7 +64,7 @@ macro_rules! declare_avg_counter_u64 {
 
 lazy_static! {
     #[doc(hidden)]
-    pub static ref __COUNTERS_LIST: Mutex<HashMap<String, (Vec<Weak<AtomicU64>>, __AcMode, bool)>> = Mutex::new(HashMap::new());
+    pub static ref __COUNTERS_LIST: Mutex<HashMap<String, (Vec<Weak<AtomicU64>>, u64, __AcMode, bool)>> = Mutex::new(HashMap::new());
 }
 
 #[doc(hidden)]
@@ -187,7 +187,7 @@ impl<'a> Drop for AtomicCounterGuardSum<'a> {
 pub fn get_counter_value(name: &str) -> (u64, u64) {
     let mut counters = __COUNTERS_LIST.lock();
 
-    let (ref mut vec, mode, reset) = if let Some(val) = counters.get_mut(name) {
+    let (ref mut vec, part_value, mode, reset) = if let Some(val) = counters.get_mut(name) {
         val
     } else {
         return (0, 0);
@@ -200,16 +200,16 @@ pub fn get_counter_value(name: &str) -> (u64, u64) {
         __AcMode::AVG => 0,
     };
 
-    let mut result = reset_value;
+    if *reset {
+        *part_value = reset_value;
+    }
+
+    let mut result = *part_value;
 
     vec.retain(|val| {
         if val.strong_count() > 0 {
             if let Some(value) = val.upgrade() {
-                let value = if *reset {
-                    value.swap(reset_value, Ordering::Relaxed)
-                } else {
-                    value.load(Ordering::Relaxed)
-                };
+                let value = value.swap(reset_value, Ordering::Relaxed);
 
                 match mode {
                     __AcMode::SUM => {
@@ -244,4 +244,14 @@ pub fn get_counter_value(name: &str) -> (u64, u64) {
     };
 
     (result, counter)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::SumMode;
+    #[test]
+    fn alloc_test() {
+        let sum_counter = declare_counter_u64!("test_counter", SumMode, false);
+    }
 }
