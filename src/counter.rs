@@ -4,19 +4,19 @@ use parking_lot::{Mutex, RwLock};
 use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::{Arc, Weak};
 use std::thread_local;
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! declare_counter_u64_impl {
+macro_rules! declare_counter_i64_impl {
     ($name:expr, $mode:ty, $reset:expr, $extra:expr) => {
         $crate::counter::AtomicCounter::<$mode> {
             __get_counter: || {
                 thread_local! {
-                    static COUNTER: std::sync::Arc<std::sync::atomic::AtomicU64> = {
-                        let arc = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+                    static COUNTER: std::sync::Arc<std::sync::atomic::AtomicI64> = {
+                        let arc = std::sync::Arc::new(std::sync::atomic::AtomicI64::new(0));
                         let mut list = $crate::counter::__COUNTERS_LIST.lock();
                         let mut cvec = list.entry($name.to_string()).or_insert((Vec::new(), 0, <$crate::counter::AtomicCounter<$mode> as $crate::counter::__CounterType>::MODE, $reset));
                         cvec.0.push(std::sync::Arc::downgrade(&arc));
@@ -26,7 +26,7 @@ macro_rules! declare_counter_u64_impl {
                 use std::ops::Deref;
                 COUNTER.with(|c| {
                     unsafe {
-                        &*(c.deref() as *const std::sync::atomic::AtomicU64)
+                        &*(c.deref() as *const std::sync::atomic::AtomicI64)
                     }
                 })
             },
@@ -37,22 +37,22 @@ macro_rules! declare_counter_u64_impl {
 }
 
 #[macro_export]
-macro_rules! declare_counter_u64 {
+macro_rules! declare_counter_i64 {
     ($name:literal, $mode:ty, $reset:expr) => {
-        $crate::declare_counter_u64_impl!($name, $mode, $reset, ())
+        $crate::declare_counter_i64_impl!($name, $mode, $reset, ())
     };
 }
 
 pub(crate) static COUNTER_SUFFIX: &str = "$COUNTER_83uRij";
 
 #[macro_export]
-macro_rules! declare_avg_counter_u64 {
+macro_rules! declare_avg_counter_i64 {
     ($name:literal, $reset:expr) => {
-        $crate::declare_counter_u64_impl!(
+        $crate::declare_counter_i64_impl!(
             $name,
             $crate::counter::AvgMode,
             $reset,
-            $crate::declare_counter_u64_impl!(
+            $crate::declare_counter_i64_impl!(
                 concat!($name, "$COUNTER_83uRij"),
                 $crate::counter::SumMode,
                 $reset,
@@ -64,7 +64,7 @@ macro_rules! declare_avg_counter_u64 {
 
 lazy_static! {
     #[doc(hidden)]
-    pub static ref __COUNTERS_LIST: Mutex<HashMap<String, (Vec<Weak<AtomicU64>>, u64, __AcMode, bool)>> = Mutex::new(HashMap::new());
+    pub static ref __COUNTERS_LIST: Mutex<HashMap<String, (Vec<Weak<AtomicI64>>, i64, __AcMode, bool)>> = Mutex::new(HashMap::new());
 }
 
 #[doc(hidden)]
@@ -91,7 +91,7 @@ impl AtomicCounterMode for AvgMode {
 
 pub struct AtomicCounter<MODE: AtomicCounterMode> {
     #[doc(hidden)]
-    pub __get_counter: fn() -> &'static AtomicU64,
+    pub __get_counter: fn() -> &'static AtomicI64,
     #[doc(hidden)]
     pub __extra: MODE::Extra,
     #[doc(hidden)]
@@ -119,19 +119,19 @@ impl AtomicCounter<SumMode> {
     }
 
     #[inline(always)]
-    pub fn inc_by(&self, value: u64) {
+    pub fn inc_by(&self, value: i64) {
         (self.__get_counter)().fetch_add(value, Ordering::Relaxed);
     }
 
     #[inline(always)]
-    pub fn sub(&self, value: u64) {
+    pub fn sub(&self, value: i64) {
         (self.__get_counter)().fetch_sub(value, Ordering::Relaxed);
     }
 }
 
 impl AtomicCounter<AvgMode> {
     #[inline(always)]
-    pub fn add_value(&self, value: u64) {
+    pub fn add_value(&self, value: i64) {
         (self.__get_counter)().fetch_add(value, Ordering::Relaxed);
         self.__extra.inc();
     }
@@ -143,7 +143,7 @@ impl __CounterType for AtomicCounter<SumMode> {
 
 impl AtomicCounter<MaxMode> {
     #[inline(always)]
-    pub fn max(&self, val: u64) {
+    pub fn max(&self, val: i64) {
         (self.__get_counter)().fetch_max(val, Ordering::Relaxed);
     }
 }
@@ -154,7 +154,7 @@ impl __CounterType for AtomicCounter<MaxMode> {
 
 impl AtomicCounter<MinMode> {
     #[inline(always)]
-    pub fn min(&self, val: u64) {
+    pub fn min(&self, val: i64) {
         (self.__get_counter)().fetch_min(val, Ordering::Relaxed);
     }
 }
@@ -168,12 +168,12 @@ impl __CounterType for AtomicCounter<AvgMode> {
 }
 
 pub struct AtomicCounterGuardSum<'a> {
-    value: u64,
+    value: i64,
     counter: &'a AtomicCounter<SumMode>,
 }
 
 impl<'a> AtomicCounterGuardSum<'a> {
-    pub fn new(counter: &'a AtomicCounter<SumMode>, value: u64) -> Self {
+    pub fn new(counter: &'a AtomicCounter<SumMode>, value: i64) -> Self {
         counter.inc_by(value);
         Self { value, counter }
     }
@@ -185,7 +185,7 @@ impl<'a> Drop for AtomicCounterGuardSum<'a> {
     }
 }
 
-pub fn get_counter_value(name: &str) -> (u64, u64) {
+pub fn get_counter_value(name: &str) -> (i64, i64) {
     let mut counters = __COUNTERS_LIST.lock();
 
     let (ref mut vec, part_value, mode, reset) = if let Some(val) = counters.get_mut(name) {
@@ -197,7 +197,7 @@ pub fn get_counter_value(name: &str) -> (u64, u64) {
     let reset_value = match mode {
         __AcMode::SUM => 0,
         __AcMode::MAX => 0,
-        __AcMode::MIN => u64::MAX,
+        __AcMode::MIN => i64::MAX,
         __AcMode::AVG => 0,
     };
 
@@ -235,6 +235,8 @@ pub fn get_counter_value(name: &str) -> (u64, u64) {
         }
     });
 
+    *part_value = result;
+
     let is_average = __AcMode::AVG == *mode;
     drop(counters);
 
@@ -253,6 +255,6 @@ mod tests {
     use super::SumMode;
     #[test]
     fn alloc_test() {
-        let sum_counter = declare_counter_u64!("test_counter", SumMode, false);
+        let sum_counter = declare_counter_i64!("test_counter", SumMode, false);
     }
 }
