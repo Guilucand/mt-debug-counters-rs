@@ -7,7 +7,11 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-pub fn enable_counters_logging(file: impl AsRef<Path>, interval: Duration) {
+pub fn enable_counters_logging(
+    file: impl AsRef<Path>,
+    interval: Duration,
+    callback: impl Fn(&mut JsonValue) + Send + 'static,
+) {
     let mut file = File::create(file).unwrap();
     let time = Instant::now();
 
@@ -43,11 +47,15 @@ pub fn enable_counters_logging(file: impl AsRef<Path>, interval: Duration) {
                     ];
                     json_values[name] = values.as_ref().into();
                 } else {
-                    let values: [JsonValue; 2] =
-                        [value.into(), format!("{}", ByteSize(value.abs() as u64)).into()];
+                    let values: [JsonValue; 2] = [
+                        value.into(),
+                        format!("{}", ByteSize(value.abs() as u64)).into(),
+                    ];
                     json_values[name] = values.as_ref().into();
                 }
             }
+
+            callback(&mut json_values);
 
             writeln!(file, "{}", json_values);
         }
