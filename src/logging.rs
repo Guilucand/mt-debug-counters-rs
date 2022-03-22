@@ -36,8 +36,9 @@ pub fn enable_counters_logging(file: impl AsRef<Path>, interval: Duration) {
                 // Average, use floating point
                 if avg_counter > 0 {
                     let avg_value = (value as f64) / (avg_counter as f64);
-                    let values: [JsonValue; 2] = [
+                    let values: [JsonValue; 3] = [
                         avg_value.into(),
+                        avg_counter.into(),
                         format!("{}", ByteSize(avg_value as u64)).into(),
                     ];
                     json_values[name] = values.as_ref().into();
