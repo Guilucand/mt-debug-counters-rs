@@ -1,5 +1,5 @@
 [package]
-name = "counter-stats"
+name = "mt-debug-counters"
 version = "0.1.0"
 authors = ["Andrea Cracco <guilucand@gmail.com>"]
 edition = "2021"

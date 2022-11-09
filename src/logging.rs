@@ -57,7 +57,7 @@ pub fn enable_counters_logging(
 
             callback(&mut json_values);
 
-            writeln!(file, "{}", json_values);
+            let _ = writeln!(file, "{}", json_values);
         }
     });
 }

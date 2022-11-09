@@ -1,12 +1,10 @@
 use lazy_static::lazy_static;
-use parking_lot::lock_api::RawMutex;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::{Mutex};
 use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Weak};
-use std::thread_local;
+use std::sync::{Weak};
 
 #[doc(hidden)]
 #[macro_export]
@@ -240,7 +238,7 @@ pub fn get_counter_value(name: &str) -> (i64, i64) {
     let is_average = __AcMode::AVG == *mode;
     drop(counters);
 
-    let mut counter = if is_average {
+    let counter = if is_average {
         get_counter_value(&(name.to_string() + COUNTER_SUFFIX)).0
     } else {
         0
