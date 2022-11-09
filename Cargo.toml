@@ -1,9 +1,12 @@
 [package]
 name = "counter-stats"
 version = "0.1.0"
+authors = ["Andrea Cracco <guilucand@gmail.com>"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+categories = []
+description = "Crate to support high performance debug counters for heavy multithreaded applications"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Guilucand/mt-debug-counters-rs"
 
 [dependencies]
 parking_lot = "0.12.0"
