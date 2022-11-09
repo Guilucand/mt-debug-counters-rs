@@ -1,10 +1,10 @@
 use lazy_static::lazy_static;
-use parking_lot::{Mutex};
+use parking_lot::Mutex;
 use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Weak};
+use std::sync::Weak;
 
 #[doc(hidden)]
 #[macro_export]
@@ -246,7 +246,6 @@ pub fn get_counter_value(name: &str) -> (i64, i64) {
 
     (result, counter)
 }
-
 
 #[cfg(test)]
 mod tests {
