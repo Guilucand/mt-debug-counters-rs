@@ -16,7 +16,7 @@ macro_rules! declare_counter_i64_impl {
                     static COUNTER: std::sync::Arc<std::sync::atomic::AtomicI64> = {
                         let arc = std::sync::Arc::new(std::sync::atomic::AtomicI64::new(0));
                         let mut list = $crate::counter::__COUNTERS_LIST.lock();
-                        let mut cvec = list.entry($name.to_string()).or_insert((Vec::new(), 0, <$crate::counter::AtomicCounter<$mode> as $crate::counter::__CounterType>::MODE, $reset));
+                        let cvec = list.entry($name.to_string()).or_insert((Vec::new(), 0, <$crate::counter::AtomicCounter<$mode> as $crate::counter::__CounterType>::MODE, $reset));
                         cvec.0.push(std::sync::Arc::downgrade(&arc));
                         arc
                     }
@@ -252,6 +252,6 @@ mod tests {
     use super::SumMode;
     #[test]
     fn alloc_test() {
-        let sum_counter = declare_counter_i64!("test_counter", SumMode, false);
+        let _sum_counter = declare_counter_i64!("test_counter", SumMode, false);
     }
 }
