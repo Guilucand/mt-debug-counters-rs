@@ -1,6 +1,6 @@
 [package]
 name = "mt-debug-counters"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Andrea Cracco <guilucand@gmail.com>"]
 edition = "2021"
 categories = []
@@ -12,4 +12,4 @@ repository = "https://github.com/Guilucand/mt-debug-counters-rs"
 parking_lot = "0.12.1"
 lazy_static = "1.4.0"
 json = "0.12.4"
-bytesize = "1.1.0"
+bytesize = "1.2.0"
